@@ -12,44 +12,44 @@ type User struct {
 }
 
 type UserRepository interface {
-	AddUser(User) error
-	DeleteUser(User) error
-	ListUserProducts(User) ([]Product, error)
+	AddUser() error
+	DeleteUser() error
+	ListUserProducts() ([]Product, error)
 }
 
-func (u User) AddUser(user User) error {
+func (u User) AddUser() error {
 	db, err := dbUtils.OpenDBConnection()
 	if err != nil {
 		return err
 	}
 	defer dbUtils.CloseDBConnection(db)
 
-	statement := `insert into "users" ("id","email","userName") values ($1, $2, $3)`
-	_, err = db.Exec(statement, user.Id, user.Email, user.UserName)
+	statement := `insert into "users" ("id","email","username") values ($1, $2, $3)`
+	_, err = db.Exec(statement, u.Id, u.Email, u.UserName)
 	if err != nil {
-		log.Printf("Error adding %s user \n", user.UserName)
+		log.Printf("Error adding %s user %s\n", u.UserName, err.Error())
 		return err
 	}
 	return nil
 }
 
-func (u User) DeleteUser(user User) error {
+func (u User) DeleteUser() error {
 	db, err := dbUtils.OpenDBConnection()
 	if err != nil {
 		return err
 	}
 	defer dbUtils.CloseDBConnection(db)
 
-	statement := `DELETE * FROM "users" WHERE id=&1`
-	_, err = db.Exec(statement, user.Id)
+	statement := `DELETE * INTO "users" WHERE id=&1`
+	_, err = db.Exec(statement, u.Id)
 	if err != nil {
-		log.Printf("Error deleting %s user \n", user.UserName)
+		log.Printf("Error deleting %s user \n", u.UserName)
 		return err
 	}
 	return nil
 }
 
-func (u User) ListUserProducts(User) ([]Product, error) {
+func (u User) ListUserProducts() ([]Product, error) {
 	db, err := dbUtils.OpenDBConnection()
 	if err != nil {
 		return nil, err
@@ -57,8 +57,8 @@ func (u User) ListUserProducts(User) ([]Product, error) {
 	defer dbUtils.CloseDBConnection(db)
 
 	statement := `SELECT * from "products" 
-	INNER JOIN "product_user" ON product_user.productsId = products.id 
-	WHERE product_user.userId = $1`
+	INNER JOIN "products_users" ON products_user.productsid = product.id 
+	WHERE products_users.userid = $1`
 	rows, err := db.Query(statement, u.Id)
 	if err != nil {
 		log.Printf("Error deleting %s user \n", u.UserName)

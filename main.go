@@ -11,7 +11,8 @@ import (
 func main() {
 	r := chi.NewRouter()
 	r.Post("/AddProduct", handlers.AddProductHandler)
+	r.Post("/AddUser", handlers.AddUserHandler)
 
 	log.Println("Starting server at port 3000")
-	http.ListenAndServe(":3000", r)
+	http.ListenAndServe(":3001", r)
 }
