@@ -7,6 +7,11 @@ type AddProductRequest struct {
 	User repository.User `json:"user"`
 }
 
+type RemoveProductRequest struct {
+	Product repository.Product `json:"product"`
+	User    repository.User    `json:"user"`
+}
+
 type ScrapingRequest struct {
 	URL string `json:"url"`
 }

@@ -21,8 +21,9 @@ type Product struct {
 type ProductsRepository interface {
 	AddProduct() error
 	DeleteProduct() error
-	AddProductToUser(product Product) error
-	RemoveProductToUser(product Product) error
+	AddProductToUser(Product) error
+	RemoveProductToUser(Product) error
+	UpdateProductPrice(Product) error
 }
 
 func (p Product) AddProduct() error {
@@ -69,7 +70,24 @@ func (p Product) RemoveProductToUser(user User) error {
 	statement := `DELETE FROM "products_users" WHERE "userid"=$1 AND "productid"=$2;`
 	_, err = db.Exec(statement, user.Id, p.Id)
 	if err != nil {
-		log.Printf("Error removing the product %s to the user %s user \n", p.Name, user.UserName)
+		log.Printf("Error removing the product %s to the user %s user. %s \n", p.Name, user.UserName, err.Error())
+		return err
+	}
+	return nil
+}
+
+func (p Product) UpdateProductPrice(newProduct Product) error {
+	db, err := dbUtils.OpenDBConnection()
+	if err != nil {
+		return err
+	}
+	defer dbUtils.CloseDBConnection(db)
+
+	statement := `UPDATE "products" 
+	SET "higherprice"=$1,"lowerprice"=$2,"otherprice"=$3,"discount"=$4 WHERE products.id = $5;`
+	_, err = db.Exec(statement, newProduct.HigherPrice, newProduct.LowePrice, newProduct.OtherPaymentLowerPrice, newProduct.Discount, newProduct.Id)
+	if err != nil {
+		log.Printf("Error updating the product %s %s  \n", p.Name, err.Error())
 		return err
 	}
 	return nil
