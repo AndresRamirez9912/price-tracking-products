@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	apiModels "price-tracking-products/src/API/models"
 	apiUtils "price-tracking-products/src/API/utils"
@@ -9,61 +8,14 @@ import (
 )
 
 func AddProductHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: Validate: 1. If the user has the product, 2. If the product exists, 3. Scrap the product and link
+	productService := services.NewProductService()
 	body := &apiModels.AddProductRequest{}
 	err := apiUtils.GetBody(r.Body, body)
 	if err != nil {
 		return
 	}
 
-	// Check if the user already has the product
-	hasProduct, err := body.User.HaveProduct(body.URL)
-	if err != nil {
-		return
-	}
-
-	if hasProduct {
-		return
-	}
-
-	// Check if the product exists
-	exists, err := body.User.ProductExists(body.URL)
-	if err != nil {
-		return
-	}
-
-	if exists {
-		fmt.Println("The product exists")
-		// Get the product By the URL
-		product, err := body.User.GetProductByURL(body.URL)
-		if err != nil {
-			return
-		}
-
-		// Link Product with User in users_products DB
-		err = product.AddProductToUser(body.User)
-		if err != nil {
-			return
-		}
-		fmt.Println("The product has added to the user")
-
-		return
-	}
-
-	// Scrap the product information
-	product, err := services.ScrapProduct(body.URL)
-	if err != nil {
-		return
-	}
-
-	// Add Product in Products DB
-	err = product.Product.AddProduct()
-	if err != nil {
-		return
-	}
-
-	// Link Product with User in users_products DB
-	err = product.Product.AddProductToUser(body.User)
+	err = productService.AddProduct(body.User, body.URL)
 	if err != nil {
 		return
 	}
@@ -73,6 +25,7 @@ func AddProductHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func RemoveProductHandler(w http.ResponseWriter, r *http.Request) {
+	productService := services.NewProductService()
 	body := &apiModels.RemoveProductRequest{}
 	err := apiUtils.GetBody(r.Body, body)
 	if err != nil {
@@ -80,7 +33,7 @@ func RemoveProductHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = body.Product.RemoveProductToUser(body.User)
+	err = productService.RemoveProductToUser(body.User, body.Product)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

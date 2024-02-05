@@ -3,17 +3,19 @@ package handlers
 import (
 	"net/http"
 	apiUtils "price-tracking-products/src/API/utils"
-	"price-tracking-products/src/DB/repository"
+	"price-tracking-products/src/models"
+	"price-tracking-products/src/services"
 )
 
 func AddUserHandler(w http.ResponseWriter, r *http.Request) {
-	user := &repository.User{}
+	userService := services.NewUserService()
+	user := &models.User{}
 	err := apiUtils.GetBody(r.Body, user)
 	if err != nil {
 		return
 	}
 
-	err = user.AddUser()
+	err = userService.AddUser(*user)
 	if err != nil {
 		return
 	}

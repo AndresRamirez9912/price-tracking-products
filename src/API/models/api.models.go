@@ -1,15 +1,17 @@
 package apiModels
 
-import "price-tracking-products/src/DB/repository"
+import (
+	"price-tracking-products/src/models"
+)
 
 type AddProductRequest struct {
-	URL  string          `json:"url"`
-	User repository.User `json:"user"`
+	URL  string      `json:"url"`
+	User models.User `json:"user"`
 }
 
 type RemoveProductRequest struct {
-	Product repository.Product `json:"product"`
-	User    repository.User    `json:"user"`
+	Product models.Product `json:"product"`
+	User    models.User    `json:"user"`
 }
 
 type ScrapingRequest struct {
@@ -17,8 +19,8 @@ type ScrapingRequest struct {
 }
 
 type ScrapProductResponse struct {
-	Product      repository.Product `json:"scrapedProduct"`
-	Success      bool               `json:"success"`
-	ErrorCode    int                `json:"errorCode"`
-	ErrorMessage string             `json:"errorMessage"`
+	Product      models.Product `json:"scrapedProduct"`
+	Success      bool           `json:"success"`
+	ErrorCode    int            `json:"errorCode"`
+	ErrorMessage string         `json:"errorMessage"`
 }
