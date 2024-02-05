@@ -14,6 +14,8 @@ func main() {
 	r.Post("/RemoveProduct", handlers.RemoveProductHandler)
 
 	r.Post("/AddUser", handlers.AddUserHandler)
+	r.Post("/DeleteUser", handlers.DeleteUserHandler)
+	r.Post("/ListUserProducts", handlers.ListUserProductsHandler)
 
 	log.Println("Starting server at port 3000")
 	http.ListenAndServe(":3001", r)

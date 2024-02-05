@@ -14,6 +14,13 @@ type RemoveProductRequest struct {
 	User    models.User    `json:"user"`
 }
 
+type ListUserProductsResponse struct {
+	Products     []models.Product `json:"products"`
+	Success      bool             `json:"success"`
+	ErrorCode    int              `json:"errorCode"`
+	ErrorMessage string           `json:"errorMessage"`
+}
+
 type ScrapingRequest struct {
 	URL string `json:"url"`
 }

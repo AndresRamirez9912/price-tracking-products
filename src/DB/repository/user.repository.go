@@ -47,8 +47,8 @@ func (u UserRepo) DeleteUser(user models.User) error {
 }
 
 func (u UserRepo) ListUserProducts(user models.User) ([]models.Product, error) {
-	statement := `SELECT * from "products" 
-	INNER JOIN "products_users" ON products_user.productsid = product.id 
+	statement := `SELECT id,name,brand,higherprice,lowerprice,otherprice,discount,imageurl,producturl,store from "products" 
+	INNER JOIN "products_users" ON products_users.productid = products.id 
 	WHERE products_users.userid = $1`
 	rows, err := u.db.Query(statement, user.Id)
 	if err != nil {
