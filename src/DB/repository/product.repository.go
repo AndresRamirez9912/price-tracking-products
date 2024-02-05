@@ -18,7 +18,7 @@ type ProductsRepository interface {
 }
 
 type ProductRepo struct {
-	db *sql.DB
+	db *sql.Tx
 }
 
 func NewProductRepo() *ProductRepo {
@@ -26,7 +26,11 @@ func NewProductRepo() *ProductRepo {
 	if err != nil {
 		return nil
 	}
-	return &ProductRepo{db: db}
+	tx, err := dbUtils.CreateTransaction(db)
+	if err != nil {
+		return nil
+	}
+	return &ProductRepo{db: tx}
 }
 
 func (p ProductRepo) AddProduct(product models.Product) error {
@@ -38,6 +42,7 @@ func (p ProductRepo) AddProduct(product models.Product) error {
 		log.Printf("Error adding %s product %s \n", product.Name, err.Error())
 		return err
 	}
+	defer dbUtils.CloseTransaction(p.db, err)
 	return nil
 }
 
@@ -48,6 +53,7 @@ func (p ProductRepo) DeleteProduct(product models.Product) error {
 		log.Printf("Error deleting the product product %s. %s\n", product.Name, err.Error())
 		return err
 	}
+	defer dbUtils.CloseTransaction(p.db, err)
 	return nil
 }
 
@@ -58,6 +64,7 @@ func (p ProductRepo) AddProductToUser(user models.User, product models.Product) 
 		log.Printf("Error adding the product %s to the user %s user %s\n", product.Name, user.UserName, err.Error())
 		return err
 	}
+	defer dbUtils.CloseTransaction(p.db, err)
 	return nil
 }
 
@@ -68,6 +75,7 @@ func (p ProductRepo) RemoveProductToUser(user models.User, product models.Produc
 		log.Printf("Error removing the product %s to the user %s user. %s \n", product.Name, user.UserName, err.Error())
 		return err
 	}
+	defer dbUtils.CloseTransaction(p.db, err)
 	return nil
 }
 
@@ -79,6 +87,7 @@ func (p ProductRepo) UpdateProductPrice(newProduct models.Product) error {
 		log.Printf("Error updating the product %s %s  \n", newProduct.Name, err.Error())
 		return err
 	}
+	defer dbUtils.CloseTransaction(p.db, err)
 	return nil
 }
 
@@ -104,7 +113,7 @@ func (p ProductRepo) ProductExists(url string) (bool, error) {
 	if amount != 0 {
 		return true, nil
 	}
-
+	defer dbUtils.CloseTransaction(p.db, err)
 	return false, nil
 }
 
@@ -127,6 +136,6 @@ func (p ProductRepo) GetProductByURL(url string) (*models.Product, error) {
 			return nil, err
 		}
 	}
-
+	defer dbUtils.CloseTransaction(p.db, err)
 	return product, nil
 }

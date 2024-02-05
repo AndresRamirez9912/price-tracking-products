@@ -15,7 +15,7 @@ type UserRepository interface {
 }
 
 type UserRepo struct {
-	db *sql.DB
+	db *sql.Tx
 }
 
 func NewUserRepo() *UserRepo {
@@ -23,7 +23,11 @@ func NewUserRepo() *UserRepo {
 	if err != nil {
 		return nil
 	}
-	return &UserRepo{db: db}
+	tx, err := dbUtils.CreateTransaction(db)
+	if err != nil {
+		return nil
+	}
+	return &UserRepo{db: tx}
 }
 
 func (u UserRepo) AddUser(user models.User) error {
@@ -33,6 +37,7 @@ func (u UserRepo) AddUser(user models.User) error {
 		log.Printf("Error adding %s user %s\n", user.UserName, err.Error())
 		return err
 	}
+	defer dbUtils.CloseTransaction(u.db, err)
 	return nil
 }
 
@@ -43,6 +48,7 @@ func (u UserRepo) DeleteUser(user models.User) error {
 		log.Printf("Error deleting %s user \n", user.UserName)
 		return err
 	}
+	defer dbUtils.CloseTransaction(u.db, err)
 	return nil
 }
 
@@ -73,7 +79,7 @@ func (u UserRepo) ListUserProducts(user models.User) ([]models.Product, error) {
 		log.Println("Error during the  iteration", err)
 		return nil, err
 	}
-
+	defer dbUtils.CloseTransaction(u.db, err)
 	return products, nil
 }
 
@@ -100,5 +106,6 @@ func (u UserRepo) HaveProduct(user models.User, url string) (bool, error) {
 	if amount != 0 {
 		return true, nil
 	}
+	defer dbUtils.CloseTransaction(u.db, err)
 	return false, nil
 }
