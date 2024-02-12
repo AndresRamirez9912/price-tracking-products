@@ -31,3 +31,9 @@ type ScrapProductResponse struct {
 	ErrorCode    int            `json:"errorCode"`
 	ErrorMessage string         `json:"errorMessage"`
 }
+
+type GenericResponse struct {
+	Success      bool   `json:"success"`
+	ErrorCode    int    `json:"errorCode"`
+	ErrorMessage string `json:"errorMessage"`
+}

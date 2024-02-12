@@ -35,8 +35,8 @@ func NewProductRepo() *ProductRepo {
 
 func (p ProductRepo) AddProduct(product models.Product) error {
 	statement := `insert into "products" ("id","name","brand",
-	"higherprice","lowerprice","otherprice","discount","imageurl",
-	"store","producturl") values ($1, $2, $3 ,$4 ,$5 ,$6 ,$7 ,$8 ,$9 ,$10)`
+	"higher_price","lower_price","other_price","discount","image_url",
+	"store","product_url") values ($1, $2, $3 ,$4 ,$5 ,$6 ,$7 ,$8 ,$9 ,$10)`
 	_, err := p.db.Exec(statement, product.Id, product.Name, product.Brand, product.HigherPrice, product.LowePrice, product.OtherPaymentLowerPrice, product.Discount, product.ImageURL, product.Store, product.ProductURL)
 	if err != nil {
 		log.Printf("Error adding %s product %s \n", product.Name, err.Error())
@@ -58,7 +58,7 @@ func (p ProductRepo) DeleteProduct(product models.Product) error {
 }
 
 func (p ProductRepo) AddProductToUser(user models.User, product models.Product) error {
-	statement := `insert into "products_users" ("userid","productid") values ($1, $2)`
+	statement := `insert into "products_users" ("user_id","product_id") values ($1, $2)`
 	_, err := p.db.Exec(statement, user.Id, product.Id)
 	if err != nil {
 		log.Printf("Error adding the product %s to the user %s user %s\n", product.Name, user.UserName, err.Error())
@@ -69,7 +69,7 @@ func (p ProductRepo) AddProductToUser(user models.User, product models.Product) 
 }
 
 func (p ProductRepo) RemoveProductToUser(user models.User, product models.Product) error {
-	statement := `DELETE FROM "products_users" WHERE "userid"=$1 AND "productid"=$2;`
+	statement := `DELETE FROM "products_users" WHERE "user_id"=$1 AND "product_id"=$2;`
 	_, err := p.db.Exec(statement, user.Id, product.Id)
 	if err != nil {
 		log.Printf("Error removing the product %s to the user %s user. %s \n", product.Name, user.UserName, err.Error())
@@ -81,7 +81,7 @@ func (p ProductRepo) RemoveProductToUser(user models.User, product models.Produc
 
 func (p ProductRepo) UpdateProductPrice(newProduct models.Product) error {
 	statement := `UPDATE "products" 
-	SET "higherprice"=$1,"lowerprice"=$2,"otherprice"=$3,"discount"=$4 WHERE products.id = $5;`
+	SET "higher_price"=$1,"lower_price"=$2,"other_price"=$3,"discount"=$4 WHERE products.id = $5;`
 	_, err := p.db.Exec(statement, newProduct.HigherPrice, newProduct.LowePrice, newProduct.OtherPaymentLowerPrice, newProduct.Discount, newProduct.Id)
 	if err != nil {
 		log.Printf("Error updating the product %s %s  \n", newProduct.Name, err.Error())
@@ -93,7 +93,7 @@ func (p ProductRepo) UpdateProductPrice(newProduct models.Product) error {
 
 func (p ProductRepo) ProductExists(url string) (bool, error) {
 	statement := `SELECT COUNT(*) AS EXISTS FROM products 
-	WHERE producturl=$1`
+	WHERE product_url=$1`
 	rows, err := p.db.Query(statement, url)
 	if err != nil {
 		log.Printf("Error searching if product exists %s.\n", err.Error())
@@ -118,9 +118,9 @@ func (p ProductRepo) ProductExists(url string) (bool, error) {
 }
 
 func (p ProductRepo) GetProductByURL(url string) (*models.Product, error) {
-	statement := `SELECT id,name,brand,higherprice,lowerprice,otherprice,discount,imageurl,producturl,store 
+	statement := `SELECT id,name,brand,higher_price,lower_price,other_price,discount,image_url,product_url,store 
 	FROM products 
-	WHERE producturl=$1`
+	WHERE product_url=$1`
 	rows, err := p.db.Query(statement, url)
 	if err != nil {
 		log.Printf("Error searching if product exists %s.\n", err.Error())

@@ -17,6 +17,6 @@ func main() {
 	r.Post("/DeleteUser", handlers.DeleteUserHandler)
 	r.Post("/ListUserProducts", handlers.ListUserProductsHandler)
 
-	log.Println("Starting server at port 3000")
-	http.ListenAndServe(":3001", r)
+	log.Println("Starting server at port 3003")
+	http.ListenAndServe(":3003", r)
 }

@@ -1,0 +1,59 @@
+# Define the docker compose version
+version: '3.9'
+
+# Add the images of my application
+services: 
+  # Configuration of my current project
+  price-tracking-products:
+    # Specify the address of the dockerfile
+    build: 
+      context: .
+      dockerfile: dockerfile
+
+    # Define the name of the image of my app
+    image: price-tracking-products:latest
+    
+    # Define the container name of my service
+    container_name: price-tracking-products
+    
+    # Definy the port mapping
+    ports:
+      - "3003:3003"
+
+    networks:
+      - price-tracking-network
+
+    depends_on:
+      - db
+
+  # Configuration of postgresql
+  db:
+    image: postgres:16-bullseye
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: 45665482
+      POSTGRES_USER: postgres
+      POSTGRES_DB: Price-Tracker
+    ports:
+      - "5432:5432"
+    container_name: postgres
+    networks:
+      - price-tracking-network
+    volumes:
+      - pgdata:/var/lib/postgresql/data      
+   
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+
+# Configure the network
+networks:
+  price-tracking-network:
+    name: price-tracking-network
+
+# Create the volume 
+volumes:
+  pgdata:
+    driver: local

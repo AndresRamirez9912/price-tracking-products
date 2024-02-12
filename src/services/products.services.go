@@ -22,7 +22,10 @@ func NewProductService() *ProductService {
 
 func (p *ProductService) AddProduct(user models.User, url string) error {
 	// Check if the user already has the product
-	userService := NewUserService()
+	userService, err := NewUserService()
+	if err != nil {
+		return err
+	}
 	hasProduct, err := userService.repo.HaveProduct(user, url)
 	if err != nil || hasProduct {
 		return err
@@ -124,7 +127,7 @@ func ScrapProduct(URL string) (*apiModels.ScrapProductResponse, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", "http://localhost:3000/scraping", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("GET", "http://price-tracking-scrapping:3002/scraping", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Println("Error creating the HTTP request to the Scraping service", err)
 		return nil, err

@@ -8,18 +8,19 @@ import (
 )
 
 func OpenDBConnection() (*sql.DB, error) {
-	connStr := "user=postgres password=45665482 dbname=Price-Tracker host=localhost port=5432 sslmode=disable"
+	connStr := "user=postgres password=45665482 dbname=Price-Tracker host=db port=5432 sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Println("Error openning the DB connection", err)
 		return nil, err
 	}
-
+	log.Println("Application connected to the DB")
 	err = db.Ping()
 	if err != nil {
 		log.Println("Error Pinging the DB in openning function", err)
 		return nil, err
 	}
+	log.Println("Successfully Ping to the DB")
 	return db, nil
 }
 

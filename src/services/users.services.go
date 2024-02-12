@@ -9,9 +9,12 @@ type UserService struct {
 	repo repository.UserRepository
 }
 
-func NewUserService() *UserService {
-	repo := repository.NewUserRepo()
-	return &UserService{repo: repo}
+func NewUserService() (*UserService, error) {
+	repo, err := repository.NewUserRepo()
+	if err != nil {
+		return nil, err
+	}
+	return &UserService{repo: repo}, nil
 }
 
 func (u UserService) AddUser(user models.User) error {

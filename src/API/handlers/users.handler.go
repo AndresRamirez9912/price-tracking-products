@@ -10,26 +10,45 @@ import (
 )
 
 func AddUserHandler(w http.ResponseWriter, r *http.Request) {
-	userService := services.NewUserService()
-	user := &models.User{}
-	err := apiUtils.GetBody(r.Body, user)
+	response := &apiModels.GenericResponse{}
+	userService, err := services.NewUserService()
 	if err != nil {
+		response.Success = false
+		response.ErrorMessage = err.Error()
+		apiUtils.CreateResponse(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	user := &models.User{}
+	err = apiUtils.GetBody(r.Body, user)
+	if err != nil {
+		response.Success = false
+		response.ErrorMessage = err.Error()
+		apiUtils.CreateResponse(w, http.StatusBadRequest, response)
 		return
 	}
 
 	err = userService.AddUser(*user)
 	if err != nil {
+		response.Success = false
+		response.ErrorMessage = err.Error()
+		apiUtils.CreateResponse(w, http.StatusInternalServerError, response)
 		return
 	}
 
 	// Send Response
-	w.WriteHeader(http.StatusCreated)
+	response.Success = true
+	apiUtils.CreateResponse(w, http.StatusCreated, response)
 }
 
 func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
-	userService := services.NewUserService()
+	userService, err := services.NewUserService()
+	if err != nil {
+		return
+	}
+
 	user := &models.User{}
-	err := apiUtils.GetBody(r.Body, user)
+	err = apiUtils.GetBody(r.Body, user)
 	if err != nil {
 		return
 	}
@@ -45,9 +64,12 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 
 func ListUserProductsHandler(w http.ResponseWriter, r *http.Request) {
 	response := &apiModels.ListUserProductsResponse{}
-	userService := services.NewUserService()
+	userService, err := services.NewUserService()
+	if err != nil {
+		return
+	}
 	user := &models.User{}
-	err := apiUtils.GetBody(r.Body, user)
+	err = apiUtils.GetBody(r.Body, user)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response.Success = false

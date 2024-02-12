@@ -18,20 +18,20 @@ type UserRepo struct {
 	db *sql.Tx
 }
 
-func NewUserRepo() *UserRepo {
+func NewUserRepo() (*UserRepo, error) {
 	db, err := dbUtils.OpenDBConnection()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	tx, err := dbUtils.CreateTransaction(db)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return &UserRepo{db: tx}
+	return &UserRepo{db: tx}, nil
 }
 
 func (u UserRepo) AddUser(user models.User) error {
-	statement := `insert into "users" ("id","email","username") values ($1, $2, $3)`
+	statement := `insert into "users" ("id","email","user_name") values ($1, $2, $3)`
 	_, err := u.db.Exec(statement, user.Id, user.Email, user.UserName)
 	if err != nil {
 		log.Printf("Error adding %s user %s\n", user.UserName, err.Error())
@@ -53,9 +53,9 @@ func (u UserRepo) DeleteUser(user models.User) error {
 }
 
 func (u UserRepo) ListUserProducts(user models.User) ([]models.Product, error) {
-	statement := `SELECT id,name,brand,higherprice,lowerprice,otherprice,discount,imageurl,producturl,store from "products" 
-	INNER JOIN "products_users" ON products_users.productid = products.id 
-	WHERE products_users.userid = $1`
+	statement := `SELECT id,name,brand,higher_price,lower_price,other_price,discount,image_url,product_url,store from "products" 
+	INNER JOIN "products_users" ON products_users.product_id = products.id 
+	WHERE products_users.user_id = $1`
 	rows, err := u.db.Query(statement, user.Id)
 	if err != nil {
 		log.Printf("Error listing the products of the user %s user. %s \n", user.UserName, err.Error())
@@ -84,9 +84,9 @@ func (u UserRepo) ListUserProducts(user models.User) ([]models.Product, error) {
 }
 
 func (u UserRepo) HaveProduct(user models.User, url string) (bool, error) {
-	statement := `SELECT count(userid) FROM products_users 
-	INNER JOIN products ON products_users.productid = products.id
-	WHERE userid=$1 AND producturl=$2;`
+	statement := `SELECT count(user_id) FROM products_users 
+	INNER JOIN products ON products_users.product_id = products.id
+	WHERE user_id=$1 AND product_url=$2;`
 	rows, err := u.db.Query(statement, user.Id, url)
 	if err != nil {
 		log.Printf("Error checking if user %s has the product. %s \n", user.UserName, err.Error())
