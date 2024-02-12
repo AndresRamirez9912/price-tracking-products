@@ -26,14 +26,22 @@ services:
     depends_on:
       - db
 
+    environment:
+      - PORT=${PORT}
+      - USER=${USER}
+      - PASSWORD=${PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - HOST=${HOST}
+      - DB_PORT=5432
+
   # Configuration of postgresql
   db:
     image: postgres:16-bullseye
     restart: always
     environment:
-      POSTGRES_PASSWORD: 45665482
-      POSTGRES_USER: postgres
-      POSTGRES_DB: Price-Tracker
+      POSTGRES_PASSWORD: ${PASSWORD}
+      POSTGRES_USER: ${USER}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     container_name: postgres

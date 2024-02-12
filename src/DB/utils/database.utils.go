@@ -2,14 +2,17 @@ package dbUtils
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
+	"os"
+	"price-tracking-products/src/constants"
 
 	_ "github.com/lib/pq"
 )
 
 func OpenDBConnection() (*sql.DB, error) {
-	connStr := "user=postgres password=45665482 dbname=Price-Tracker host=db port=5432 sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
+	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=5432 sslmode=disable", os.Getenv(constants.USER), os.Getenv(constants.PASSWORD), os.Getenv(constants.DB_NAME), os.Getenv(constants.HOST))
+	db, err := sql.Open(constants.DRIVER_NAME, connStr)
 	if err != nil {
 		log.Println("Error openning the DB connection", err)
 		return nil, err

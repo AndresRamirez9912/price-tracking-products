@@ -3,11 +3,14 @@ package services
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	apiModels "price-tracking-products/src/API/models"
 	apiUtils "price-tracking-products/src/API/utils"
 	"price-tracking-products/src/DB/repository"
+	"price-tracking-products/src/constants"
 	"price-tracking-products/src/models"
 )
 
@@ -127,12 +130,14 @@ func ScrapProduct(URL string) (*apiModels.ScrapProductResponse, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", "http://price-tracking-scrapping:3002/scraping", bytes.NewBuffer(jsonData))
+	// URL = "http://price-tracking-scrapping:3002/scraping"
+	scrapingURL := fmt.Sprintf("%s://%s/scraping", os.Getenv(constants.SCRAPING_SCHEME), os.Getenv(constants.SCRAPING_HOST))
+	req, err := http.NewRequest(constants.GET_METHOD, scrapingURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Println("Error creating the HTTP request to the Scraping service", err)
 		return nil, err
 	}
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add(constants.CONTENT_TYPE, constants.APPLICATION_JSON)
 
 	client := &http.Client{}
 	response, err := client.Do(req)

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	apiModels "price-tracking-products/src/API/models"
 	apiUtils "price-tracking-products/src/API/utils"
+	"price-tracking-products/src/constants"
 	"price-tracking-products/src/models"
 	"price-tracking-products/src/services"
 )
@@ -96,7 +97,7 @@ func ListUserProductsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send Response
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add(constants.CONTENT_TYPE, constants.APPLICATION_JSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(jsonData)
 }

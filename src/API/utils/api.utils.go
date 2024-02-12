@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	apiModels "price-tracking-products/src/API/models"
+	"price-tracking-products/src/constants"
 )
 
 func GetBody(body io.ReadCloser, receiver any) error {
@@ -18,7 +19,7 @@ func GetBody(body io.ReadCloser, receiver any) error {
 }
 
 func CreateResponse(w http.ResponseWriter, statusCode int, response *apiModels.GenericResponse) {
-	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add(constants.CONTENT_TYPE, constants.APPLICATION_JSON)
 	w.WriteHeader(statusCode)
 	err := json.NewEncoder(w).Encode(response)
 	if err != nil {

@@ -15,10 +15,8 @@ type RemoveProductRequest struct {
 }
 
 type ListUserProductsResponse struct {
-	Products     []models.Product `json:"products"`
-	Success      bool             `json:"success"`
-	ErrorCode    int              `json:"errorCode"`
-	ErrorMessage string           `json:"errorMessage"`
+	Products []models.Product `json:"products"`
+	GenericResponse
 }
 
 type ScrapingRequest struct {
@@ -26,10 +24,8 @@ type ScrapingRequest struct {
 }
 
 type ScrapProductResponse struct {
-	Product      models.Product `json:"scrapedProduct"`
-	Success      bool           `json:"success"`
-	ErrorCode    int            `json:"errorCode"`
-	ErrorMessage string         `json:"errorMessage"`
+	Product models.Product `json:"scrapedProduct"`
+	GenericResponse
 }
 
 type GenericResponse struct {
