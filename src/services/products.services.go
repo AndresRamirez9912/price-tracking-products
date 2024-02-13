@@ -29,6 +29,7 @@ func (p *ProductService) AddProduct(user models.User, url string) error {
 	if err != nil {
 		return err
 	}
+
 	hasProduct, err := userService.repo.HaveProduct(user, url)
 	if err != nil || hasProduct {
 		return err
@@ -131,8 +132,8 @@ func ScrapProduct(URL string) (*apiModels.ScrapProductResponse, error) {
 	}
 
 	// URL = "http://price-tracking-scrapping:3002/scraping"
-	scrapingURL := fmt.Sprintf("%s://%s/scraping", os.Getenv(constants.SCRAPING_SCHEME), os.Getenv(constants.SCRAPING_HOST))
-	req, err := http.NewRequest(constants.GET_METHOD, scrapingURL, bytes.NewBuffer(jsonData))
+	scrapingURL := fmt.Sprintf("%s://%s/api/scraping", os.Getenv(constants.SCRAPING_SCHEME), os.Getenv(constants.SCRAPING_HOST))
+	req, err := http.NewRequest(http.MethodPost, scrapingURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Println("Error creating the HTTP request to the Scraping service", err)
 		return nil, err

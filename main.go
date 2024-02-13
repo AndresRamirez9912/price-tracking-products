@@ -20,12 +20,12 @@ func main() {
 	}
 
 	r := chi.NewRouter()
-	r.Post("/AddProduct", handlers.AddProductHandler)
-	r.Post("/RemoveProduct", handlers.RemoveProductHandler)
+	r.Post("/api/AddProduct", handlers.AddProductHandler)
+	r.Post("/api/RemoveProduct", handlers.RemoveProductHandler)
 
-	r.Post("/AddUser", handlers.AddUserHandler)
-	r.Post("/DeleteUser", handlers.DeleteUserHandler)
-	r.Post("/ListUserProducts", handlers.ListUserProductsHandler)
+	r.Post("/api/AddUser", handlers.AddUserHandler)
+	r.Post("/api/DeleteUser", handlers.DeleteUserHandler)
+	r.Post("/api/ListUserProducts", handlers.ListUserProductsHandler)
 
 	log.Println("Starting server at port", os.Getenv(constants.PORT))
 	http.ListenAndServe(os.Getenv(constants.PORT), r)

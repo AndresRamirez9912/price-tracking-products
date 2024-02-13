@@ -1,7 +1,7 @@
 package constants
 
 const (
-	USER        = "USER"
+	DB_USER     = "DB_USER"
 	PASSWORD    = "PASSWORD"
 	DB_NAME     = "DB_NAME"
 	HOST        = "HOST"
