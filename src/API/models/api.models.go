@@ -33,3 +33,7 @@ type GenericResponse struct {
 	ErrorCode    int    `json:"errorCode"`
 	ErrorMessage string `json:"errorMessage"`
 }
+
+type ListProductsRequest struct {
+	User models.User `json:"user"`
+}

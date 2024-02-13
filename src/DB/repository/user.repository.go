@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 	dbUtils "price-tracking-products/src/DB/utils"
 	"price-tracking-products/src/models"
@@ -15,7 +16,8 @@ type UserRepository interface {
 }
 
 type UserRepo struct {
-	db *sql.Tx
+	db *sql.DB
+	tx *sql.Tx
 }
 
 func NewUserRepo() (*UserRepo, error) {
@@ -27,36 +29,68 @@ func NewUserRepo() (*UserRepo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &UserRepo{db: tx}, nil
+	return &UserRepo{db: db, tx: tx}, nil
+}
+
+func (u *UserRepo) updateTransaction() error {
+	tx, err := dbUtils.CreateTransaction(u.db)
+	if err != nil {
+		return nil
+	}
+	u.tx = tx
+	return nil
 }
 
 func (u UserRepo) AddUser(user models.User) error {
+	// Update the transaction
+	err := u.updateTransaction()
+	if err != nil {
+		return err
+	}
+
 	statement := `insert into "users" ("id","email","user_name") values ($1, $2, $3)`
-	_, err := u.db.Exec(statement, user.Id, user.Email, user.UserName)
+	_, err = u.tx.Exec(statement, user.Id, user.Email, user.UserName)
 	if err != nil {
 		log.Printf("Error adding %s user %s\n", user.UserName, err.Error())
 		return err
 	}
-	defer dbUtils.CloseTransaction(u.db, err)
+	defer dbUtils.CloseTransaction(u.tx, err)
 	return nil
 }
 
 func (u UserRepo) DeleteUser(user models.User) error {
+	// Update the transaction
+	err := u.updateTransaction()
+	if err != nil {
+		return err
+	}
+
 	statement := `DELETE * INTO "users" WHERE id=&1`
-	_, err := u.db.Exec(statement, user.Id)
+	_, err = u.tx.Exec(statement, user.Id)
 	if err != nil {
 		log.Printf("Error deleting %s user \n", user.UserName)
 		return err
 	}
-	defer dbUtils.CloseTransaction(u.db, err)
+	defer dbUtils.CloseTransaction(u.tx, err)
 	return nil
 }
 
 func (u UserRepo) ListUserProducts(user models.User) ([]models.Product, error) {
+	// Update the transaction
+	err := u.updateTransaction()
+	if err != nil {
+		return nil, err
+	}
+
+	if (user == models.User{}) {
+		log.Println("User empty, bad request")
+		return nil, errors.New("User empty, bad request")
+	}
+
 	statement := `SELECT id,name,brand,higher_price,lower_price,other_price,discount,image_url,product_url,store from "products" 
 	INNER JOIN "products_users" ON products_users.product_id = products.id 
 	WHERE products_users.user_id = $1`
-	rows, err := u.db.Query(statement, user.Id)
+	rows, err := u.tx.Query(statement, user.Id)
 	if err != nil {
 		log.Printf("Error listing the products of the user %s user. %s \n", user.UserName, err.Error())
 		return nil, err
@@ -79,15 +113,21 @@ func (u UserRepo) ListUserProducts(user models.User) ([]models.Product, error) {
 		log.Println("Error during the  iteration", err)
 		return nil, err
 	}
-	defer dbUtils.CloseTransaction(u.db, err)
+	defer dbUtils.CloseTransaction(u.tx, err)
 	return products, nil
 }
 
 func (u UserRepo) HaveProduct(user models.User, url string) (bool, error) {
+	// Update the transaction
+	err := u.updateTransaction()
+	if err != nil {
+		return false, err
+	}
+
 	statement := `SELECT count(user_id) FROM products_users 
 	INNER JOIN products ON products_users.product_id = products.id
 	WHERE user_id=$1 AND product_url=$2;`
-	rows, err := u.db.Query(statement, user.Id, url)
+	rows, err := u.tx.Query(statement, user.Id, url)
 	if err != nil {
 		log.Printf("Error checking if user %s has the product. %s \n", user.UserName, err.Error())
 		return false, err
@@ -106,6 +146,6 @@ func (u UserRepo) HaveProduct(user models.User, url string) (bool, error) {
 	if amount != 0 {
 		return true, nil
 	}
-	defer dbUtils.CloseTransaction(u.db, err)
+	defer dbUtils.CloseTransaction(u.tx, err)
 	return false, nil
 }

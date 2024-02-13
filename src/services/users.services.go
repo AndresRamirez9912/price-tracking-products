@@ -33,8 +33,8 @@ func (u UserService) DeleteUser(user models.User) error {
 	return nil
 }
 
-func (u UserService) ListUserProducts(user models.User) ([]models.Product, error) {
-	products, err := u.repo.ListUserProducts(user)
+func (u UserService) ListUserProducts(user *models.User) ([]models.Product, error) {
+	products, err := u.repo.ListUserProducts(*user)
 	if err != nil {
 		return nil, err
 	}

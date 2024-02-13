@@ -18,7 +18,8 @@ type ProductsRepository interface {
 }
 
 type ProductRepo struct {
-	db *sql.Tx
+	db *sql.DB
+	tx *sql.Tx
 }
 
 func NewProductRepo() *ProductRepo {
@@ -30,71 +31,116 @@ func NewProductRepo() *ProductRepo {
 	if err != nil {
 		return nil
 	}
-	return &ProductRepo{db: tx}
+	return &ProductRepo{db: db, tx: tx}
+}
+
+func (p *ProductRepo) updateTransaction() error {
+	tx, err := dbUtils.CreateTransaction(p.db)
+	if err != nil {
+		return nil
+	}
+	p.tx = tx
+	return nil
 }
 
 func (p ProductRepo) AddProduct(product models.Product) error {
+	// Update the transaction
+	err := p.updateTransaction()
+	if err != nil {
+		return err
+	}
+
 	statement := `insert into "products" ("id","name","brand",
 	"higher_price","lower_price","other_price","discount","image_url",
 	"store","product_url") values ($1, $2, $3 ,$4 ,$5 ,$6 ,$7 ,$8 ,$9 ,$10)`
-	_, err := p.db.Exec(statement, product.Id, product.Name, product.Brand, product.HigherPrice, product.LowePrice, product.OtherPaymentLowerPrice, product.Discount, product.ImageURL, product.Store, product.ProductURL)
+	_, err = p.tx.Exec(statement, product.Id, product.Name, product.Brand, product.HigherPrice, product.LowePrice, product.OtherPaymentLowerPrice, product.Discount, product.ImageURL, product.Store, product.ProductURL)
 	if err != nil {
 		log.Printf("Error adding %s product %s \n", product.Name, err.Error())
 		return err
 	}
-	defer dbUtils.CloseTransaction(p.db, err)
+	defer dbUtils.CloseTransaction(p.tx, err)
 	return nil
 }
 
 func (p ProductRepo) DeleteProduct(product models.Product) error {
+	// Update the transaction
+	err := p.updateTransaction()
+	if err != nil {
+		return err
+	}
+
 	statement := `DELETE * FROM products WHERE products.id=$1`
-	_, err := p.db.Exec(statement, product.Id)
+	_, err = p.tx.Exec(statement, product.Id)
 	if err != nil {
 		log.Printf("Error deleting the product product %s. %s\n", product.Name, err.Error())
 		return err
 	}
-	defer dbUtils.CloseTransaction(p.db, err)
+	defer dbUtils.CloseTransaction(p.tx, err)
 	return nil
 }
 
 func (p ProductRepo) AddProductToUser(user models.User, product models.Product) error {
-	statement := `insert into "products_users" ("user_id","product_id") values ($1, $2)`
-	_, err := p.db.Exec(statement, user.Id, product.Id)
+	// Update the transaction
+	err := p.updateTransaction()
 	if err != nil {
-		log.Printf("Error adding the product %s to the user %s user %s\n", product.Name, user.UserName, err.Error())
 		return err
 	}
-	defer dbUtils.CloseTransaction(p.db, err)
+
+	statement := `insert into "products_users" ("user_id","product_id") values ($1, $2)`
+	_, err = p.tx.Exec(statement, user.Id, product.Id)
+	if err != nil {
+		log.Printf("Error adding the product %s to the user %s. %s\n", product.Name, user.UserName, err.Error())
+		return err
+	}
+	defer dbUtils.CloseTransaction(p.tx, err)
 	return nil
 }
 
 func (p ProductRepo) RemoveProductToUser(user models.User, product models.Product) error {
+	// Update the transaction
+	err := p.updateTransaction()
+	if err != nil {
+		return err
+	}
+
 	statement := `DELETE FROM "products_users" WHERE "user_id"=$1 AND "product_id"=$2;`
-	_, err := p.db.Exec(statement, user.Id, product.Id)
+	_, err = p.tx.Exec(statement, user.Id, product.Id)
 	if err != nil {
 		log.Printf("Error removing the product %s to the user %s user. %s \n", product.Name, user.UserName, err.Error())
 		return err
 	}
-	defer dbUtils.CloseTransaction(p.db, err)
+	defer dbUtils.CloseTransaction(p.tx, err)
 	return nil
 }
 
 func (p ProductRepo) UpdateProductPrice(newProduct models.Product) error {
+	// Update the transaction
+	err := p.updateTransaction()
+	if err != nil {
+		return err
+	}
+
 	statement := `UPDATE "products" 
 	SET "higher_price"=$1,"lower_price"=$2,"other_price"=$3,"discount"=$4 WHERE products.id = $5;`
-	_, err := p.db.Exec(statement, newProduct.HigherPrice, newProduct.LowePrice, newProduct.OtherPaymentLowerPrice, newProduct.Discount, newProduct.Id)
+	_, err = p.tx.Exec(statement, newProduct.HigherPrice, newProduct.LowePrice, newProduct.OtherPaymentLowerPrice, newProduct.Discount, newProduct.Id)
 	if err != nil {
 		log.Printf("Error updating the product %s %s  \n", newProduct.Name, err.Error())
 		return err
 	}
-	defer dbUtils.CloseTransaction(p.db, err)
+	defer dbUtils.CloseTransaction(p.tx, err)
 	return nil
 }
 
 func (p ProductRepo) ProductExists(url string) (bool, error) {
+	// Update the transaction
+	err := p.updateTransaction()
+	if err != nil {
+		return false, err
+	}
+
 	statement := `SELECT COUNT(*) AS EXISTS FROM products 
 	WHERE product_url=$1`
-	rows, err := p.db.Query(statement, url)
+	rows, err := p.tx.Query(statement, url)
 	if err != nil {
 		log.Printf("Error searching if product exists %s.\n", err.Error())
 		return false, err
@@ -113,15 +159,21 @@ func (p ProductRepo) ProductExists(url string) (bool, error) {
 	if amount != 0 {
 		return true, nil
 	}
-	defer dbUtils.CloseTransaction(p.db, err)
+	defer dbUtils.CloseTransaction(p.tx, err)
 	return false, nil
 }
 
 func (p ProductRepo) GetProductByURL(url string) (*models.Product, error) {
+	// Update the transaction
+	err := p.updateTransaction()
+	if err != nil {
+		return nil, err
+	}
+
 	statement := `SELECT id,name,brand,higher_price,lower_price,other_price,discount,image_url,product_url,store 
 	FROM products 
 	WHERE product_url=$1`
-	rows, err := p.db.Query(statement, url)
+	rows, err := p.tx.Query(statement, url)
 	if err != nil {
 		log.Printf("Error searching if product exists %s.\n", err.Error())
 		return nil, err
@@ -136,6 +188,6 @@ func (p ProductRepo) GetProductByURL(url string) (*models.Product, error) {
 			return nil, err
 		}
 	}
-	defer dbUtils.CloseTransaction(p.db, err)
+	defer dbUtils.CloseTransaction(p.tx, err)
 	return product, nil
 }

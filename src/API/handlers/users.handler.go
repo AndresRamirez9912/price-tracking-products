@@ -69,7 +69,8 @@ func ListUserProductsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	user := &models.User{}
+
+	user := &apiModels.ListProductsRequest{}
 	err = apiUtils.GetBody(r.Body, user)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -78,7 +79,7 @@ func ListUserProductsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	products, err := userService.ListUserProducts(*user)
+	products, err := userService.ListUserProducts(&user.User)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response.Success = false
