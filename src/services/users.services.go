@@ -26,7 +26,14 @@ func (u UserService) AddUser(user models.User) error {
 }
 
 func (u UserService) DeleteUser(user models.User) error {
-	err := u.repo.DeleteUser(user)
+	// Delete the products linked
+	err := u.repo.DeleteAllUserProducts(user)
+	if err != nil {
+		return err
+	}
+
+	// Delete the user
+	err = u.repo.DeleteUser(user)
 	if err != nil {
 		return err
 	}

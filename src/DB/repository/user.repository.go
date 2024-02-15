@@ -13,6 +13,7 @@ type UserRepository interface {
 	DeleteUser(models.User) error
 	ListUserProducts(models.User) ([]models.Product, error)
 	HaveProduct(models.User, string) (bool, error)
+	DeleteAllUserProducts(models.User) error
 }
 
 type UserRepo struct {
@@ -65,10 +66,10 @@ func (u UserRepo) DeleteUser(user models.User) error {
 		return err
 	}
 
-	statement := `DELETE * INTO "users" WHERE id=&1`
+	statement := `DELETE FROM "users" WHERE id=$1`
 	_, err = u.tx.Exec(statement, user.Id)
 	if err != nil {
-		log.Printf("Error deleting %s user \n", user.UserName)
+		log.Printf("Error deleting the user %s. %s \n", user.UserName, err)
 		return err
 	}
 	defer dbUtils.CloseTransaction(u.tx, err)
@@ -148,4 +149,21 @@ func (u UserRepo) HaveProduct(user models.User, url string) (bool, error) {
 	}
 	defer dbUtils.CloseTransaction(u.tx, err)
 	return false, nil
+}
+
+func (u UserRepo) DeleteAllUserProducts(user models.User) error {
+	// Update the transaction
+	err := u.updateTransaction()
+	if err != nil {
+		return err
+	}
+
+	statement := `DELETE FROM "products_users" WHERE user_id=$1`
+	_, err = u.tx.Exec(statement, user.Id)
+	if err != nil {
+		log.Printf("Error deleting the user's products. %s \n", err)
+		return err
+	}
+	defer dbUtils.CloseTransaction(u.tx, err)
+	return nil
 }

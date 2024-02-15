@@ -117,7 +117,7 @@ func (p *ProductService) AddProductToUser(user models.User, product models.Produ
 }
 
 func (p *ProductService) RemoveProductToUser(user models.User, product models.Product) error {
-	err := p.repo.AddProductToUser(user, product)
+	err := p.repo.RemoveProductToUser(user, product)
 	if err != nil {
 		return err
 	}

@@ -37,3 +37,7 @@ type GenericResponse struct {
 type ListProductsRequest struct {
 	User models.User `json:"user"`
 }
+
+type DeleteUserRequest struct {
+	User models.User `json:"user"`
+}

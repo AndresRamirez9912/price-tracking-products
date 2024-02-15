@@ -48,19 +48,19 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := &models.User{}
+	user := &apiModels.DeleteUserRequest{}
 	err = apiUtils.GetBody(r.Body, user)
 	if err != nil {
 		return
 	}
 
-	err = userService.DeleteUser(*user)
+	err = userService.DeleteUser(user.User)
 	if err != nil {
 		return
 	}
 
 	// Send Response
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 }
 
 func ListUserProductsHandler(w http.ResponseWriter, r *http.Request) {
