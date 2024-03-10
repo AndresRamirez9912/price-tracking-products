@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	apiModels "price-tracking-products/src/API/models"
 	apiUtils "price-tracking-products/src/API/utils"
+	"price-tracking-products/src/constants"
 	"price-tracking-products/src/services"
 )
 
@@ -41,4 +43,37 @@ func RemoveProductHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Send Response
 	w.WriteHeader(http.StatusOK)
+}
+
+func GetProductHistory(w http.ResponseWriter, r *http.Request) {
+	response := &apiModels.ProductHistoryResponse{}
+	productService := services.NewProductService()
+	body := &apiModels.ProductHistoryRequest{}
+	err := apiUtils.GetBody(r.Body, body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	history, err := productService.GetProductHistory(&body.Product)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Create response
+	response.History = history
+	response.Success = true
+	jsonData, err := json.Marshal(response)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		response.Success = false
+		response.ErrorMessage = err.Error()
+		return
+	}
+
+	// Send Response
+	w.Header().Add(constants.CONTENT_TYPE, constants.APPLICATION_JSON)
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonData)
 }
