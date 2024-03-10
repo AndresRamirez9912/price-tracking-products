@@ -18,3 +18,13 @@ type User struct {
 	Email    string `json:"email"`
 	UserName string `json:"userName"`
 }
+
+type ProductHistory struct {
+	Id                     string `json:"id"`
+	ProductId              string `json:"productId"`
+	ProductName            string `json:"productName"`
+	HigherPrice            string `json:"higherPrice"`
+	LowePrice              string `json:"lowePrice"`
+	OtherPaymentLowerPrice string `json:"otherPaymentLowerPrice"`
+	CreatedAt              string `json:"createdAt"`
+}

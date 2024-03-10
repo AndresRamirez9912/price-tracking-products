@@ -15,6 +15,10 @@ type ProductsRepository interface {
 	UpdateProductPrice(models.Product) error
 	ProductExists(string) (bool, error)
 	GetProductByURL(string) (*models.Product, error)
+
+	AddProductHistory(*models.Product) error
+	DeleteProductHistory(*models.Product) error
+	GetProductHistory(*models.Product) ([]models.ProductHistory, error)
 }
 
 type ProductRepo struct {
@@ -190,4 +194,70 @@ func (p ProductRepo) GetProductByURL(url string) (*models.Product, error) {
 	}
 	defer dbUtils.CloseTransaction(p.tx, err)
 	return product, nil
+}
+
+func (p ProductRepo) AddProductHistory(product *models.Product) error {
+	// Update the transaction
+	err := p.updateTransaction()
+	if err != nil {
+		return err
+	}
+
+	statement := `insert into "product_history" 
+	("product_id","product_name","higher_price","lower_price","other_price") 
+	values ($1, $2, $3, $4, $5)`
+	_, err = p.tx.Exec(statement, product.Id, product.Name, product.HigherPrice, product.LowePrice, product.OtherPaymentLowerPrice)
+	if err != nil {
+		log.Printf("Error adding the product %s to the history table %s\n", product.Name, err.Error())
+		return err
+	}
+	defer dbUtils.CloseTransaction(p.tx, err)
+	return nil
+
+}
+
+func (p ProductRepo) DeleteProductHistory(product *models.Product) error {
+	// Update the transaction
+	err := p.updateTransaction()
+	if err != nil {
+		return err
+	}
+
+	statement := `DELETE * FROM product_history WHERE product_history.id=$1`
+	_, err = p.tx.Exec(statement, product.Id)
+	if err != nil {
+		log.Printf("Error deleting the product %s to the history table %s\n", product.Name, err.Error())
+		return err
+	}
+	defer dbUtils.CloseTransaction(p.tx, err)
+	return nil
+}
+
+func (p ProductRepo) GetProductHistory(product *models.Product) ([]models.ProductHistory, error) {
+	// Update the transaction
+	err := p.updateTransaction()
+	if err != nil {
+		return nil, err
+	}
+
+	statement := `SELECT * FROM product_history WHERE product_id=$1`
+	rows, err := p.tx.Query(statement, product.Id)
+	if err != nil {
+		log.Printf("Error getting the product history of the product: %s. %s\n", product.Name, err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	var productHistory []models.ProductHistory
+	for rows.Next() {
+		product := &models.ProductHistory{}
+		err = rows.Scan(&product.Id, &product.ProductId, &product.ProductName, &product.HigherPrice, &product.LowePrice, &product.OtherPaymentLowerPrice, &product.CreatedAt)
+		if err != nil {
+			log.Println("Error scanning the query result, getting the product history", err)
+			return nil, err
+		}
+		productHistory = append(productHistory, *product)
+	}
+	defer dbUtils.CloseTransaction(p.tx, err)
+	return productHistory, nil
 }

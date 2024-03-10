@@ -41,3 +41,12 @@ type ListProductsRequest struct {
 type DeleteUserRequest struct {
 	User models.User `json:"user"`
 }
+
+type ProductHistoryRequest struct {
+	Product models.Product `json:"product"`
+}
+
+type ProductHistoryResponse struct {
+	History []models.ProductHistory `json:"history"`
+	GenericResponse
+}

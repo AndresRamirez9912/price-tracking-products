@@ -73,11 +73,25 @@ func (p *ProductService) AddProduct(user models.User, url string) error {
 	if err != nil {
 		return err
 	}
+
+	// Add product in history table
+	err = p.repo.AddProductHistory(&scrapedProduct.Product)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (p *ProductService) DeleteProduct(product models.Product) error {
 	err := p.repo.DeleteProduct(product)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *ProductService) DeleteProductHistory(product *models.Product) error {
+	err := p.repo.DeleteProductHistory(product)
 	if err != nil {
 		return err
 	}
@@ -155,4 +169,12 @@ func ScrapProduct(URL string) (*apiModels.ScrapProductResponse, error) {
 		return nil, err
 	}
 	return product, nil
+}
+
+func (p *ProductService) GetProductHistory(product *models.Product) ([]models.ProductHistory, error) {
+	history, err := p.repo.GetProductHistory(product)
+	if err != nil {
+		return nil, err
+	}
+	return history, nil
 }
