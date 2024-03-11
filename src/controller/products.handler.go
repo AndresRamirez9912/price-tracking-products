@@ -1,10 +1,8 @@
 package controller
 
 import (
-	"encoding/json"
 	"net/http"
 
-	"price-tracking-products/src/constants"
 	apiModels "price-tracking-products/src/controller/models"
 	apiUtils "price-tracking-products/src/controller/utils"
 	"price-tracking-products/src/services"
@@ -24,11 +22,13 @@ func (controller *ProductsController) AddProductHandler(w http.ResponseWriter, r
 	body := &apiModels.AddProductRequest{}
 	err := apiUtils.GetBody(r.Body, body)
 	if err != nil {
+		apiUtils.CreateErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err = controller.productService.AddProduct(body.User, body.URL)
 	if err != nil {
+		apiUtils.CreateErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -40,13 +40,13 @@ func (controller *ProductsController) RemoveProductHandler(w http.ResponseWriter
 	body := &apiModels.RemoveProductRequest{}
 	err := apiUtils.GetBody(r.Body, body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		apiUtils.CreateErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err = controller.productService.RemoveProductToUser(body.User, body.Product)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		apiUtils.CreateErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -59,29 +59,18 @@ func (controller *ProductsController) GetProductHistory(w http.ResponseWriter, r
 	body := &apiModels.ProductHistoryRequest{}
 	err := apiUtils.GetBody(r.Body, body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		apiUtils.CreateErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	history, err := controller.productService.GetProductHistory(&body.Product)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	// Create response
-	response.History = history
-	response.Success = true
-	jsonData, err := json.Marshal(response)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		response.Success = false
-		response.ErrorMessage = err.Error()
+		apiUtils.CreateErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	// Send Response
-	w.Header().Add(constants.CONTENT_TYPE, constants.APPLICATION_JSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(jsonData)
+	response.History = history
+	response.Success = true
+	apiUtils.CreateResponse(w, http.StatusOK, response)
 }

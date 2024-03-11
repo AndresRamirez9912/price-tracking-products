@@ -1,10 +1,8 @@
 package controller
 
 import (
-	"encoding/json"
 	"net/http"
 
-	"price-tracking-products/src/constants"
 	apiModels "price-tracking-products/src/controller/models"
 	apiUtils "price-tracking-products/src/controller/utils"
 	"price-tracking-products/src/models"
@@ -26,17 +24,13 @@ func (controller *UserController) AddUserHandler(w http.ResponseWriter, r *http.
 	user := &models.User{}
 	err := apiUtils.GetBody(r.Body, user)
 	if err != nil {
-		response.Success = false
-		response.ErrorMessage = err.Error()
-		apiUtils.CreateResponse(w, http.StatusBadRequest, response)
+		apiUtils.CreateErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err = controller.userService.AddUser(*user)
 	if err != nil {
-		response.Success = false
-		response.ErrorMessage = err.Error()
-		apiUtils.CreateResponse(w, http.StatusInternalServerError, response)
+		apiUtils.CreateErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -49,11 +43,13 @@ func (controller *UserController) DeleteUserHandler(w http.ResponseWriter, r *ht
 	user := &apiModels.DeleteUserRequest{}
 	err := apiUtils.GetBody(r.Body, user)
 	if err != nil {
+		apiUtils.CreateErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err = controller.userService.DeleteUser(user.User)
 	if err != nil {
+		apiUtils.CreateErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -66,32 +62,18 @@ func (controller *UserController) ListUserProductsHandler(w http.ResponseWriter,
 	user := &apiModels.ListProductsRequest{}
 	err := apiUtils.GetBody(r.Body, user)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		response.Success = false
-		response.ErrorMessage = err.Error()
+		apiUtils.CreateErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	products, err := controller.userService.ListUserProducts(&user.User)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		response.Success = false
-		response.ErrorMessage = err.Error()
-		return
-	}
-
-	response.Products = products
-	response.Success = true
-	jsonData, err := json.Marshal(response)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		response.Success = false
-		response.ErrorMessage = err.Error()
+		apiUtils.CreateErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	// Send Response
-	w.Header().Add(constants.CONTENT_TYPE, constants.APPLICATION_JSON)
-	w.WriteHeader(http.StatusCreated)
-	w.Write(jsonData)
+	response.Products = products
+	response.Success = true
+	apiUtils.CreateResponse(w, http.StatusOK, response)
 }
