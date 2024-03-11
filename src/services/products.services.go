@@ -7,30 +7,35 @@ import (
 	"log"
 	"net/http"
 	"os"
-	apiModels "price-tracking-products/src/API/models"
-	apiUtils "price-tracking-products/src/API/utils"
-	"price-tracking-products/src/DB/repository"
+
 	"price-tracking-products/src/constants"
+	apiModels "price-tracking-products/src/controller/models"
+	apiUtils "price-tracking-products/src/controller/utils"
 	"price-tracking-products/src/models"
+	"price-tracking-products/src/models/repository"
 )
 
-type ProductService struct {
-	repo repository.ProductsRepository
+type ProductServiceInterface interface {
+	AddProduct(user models.User, url string) error
+	RemoveProductToUser(user models.User, product models.Product) error
+	UpdateProductPrice(product models.Product) error
+
+	GetProductHistory(product *models.Product) ([]models.ProductHistory, error)
+	DeleteProductHistory(product *models.Product) error
 }
 
-func NewProductService() *ProductService {
-	repo := repository.NewProductRepo()
-	return &ProductService{repo: repo}
+type ProductService struct {
+	repo     repository.ProductsRepository
+	userRepo repository.UserRepository
+}
+
+func NewProductService(productRepo repository.ProductsRepository, userRepo repository.UserRepository) *ProductService {
+	return &ProductService{repo: productRepo, userRepo: userRepo}
 }
 
 func (p *ProductService) AddProduct(user models.User, url string) error {
 	// Check if the user already has the product
-	userService, err := NewUserService()
-	if err != nil {
-		return err
-	}
-
-	hasProduct, err := userService.repo.HaveProduct(user, url)
+	hasProduct, err := p.userRepo.HaveProduct(user, url)
 	if err != nil || hasProduct {
 		return err
 	}
@@ -57,7 +62,7 @@ func (p *ProductService) AddProduct(user models.User, url string) error {
 	}
 
 	// Scrap the product information
-	scrapedProduct, err := ScrapProduct(url)
+	scrapedProduct, err := scrapProduct(url)
 	if err != nil {
 		return err
 	}
@@ -82,48 +87,8 @@ func (p *ProductService) AddProduct(user models.User, url string) error {
 	return nil
 }
 
-func (p *ProductService) DeleteProduct(product models.Product) error {
-	err := p.repo.DeleteProduct(product)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (p *ProductService) DeleteProductHistory(product *models.Product) error {
-	err := p.repo.DeleteProductHistory(product)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (p *ProductService) UpdateProductPrice(product models.Product) error {
 	err := p.repo.UpdateProductPrice(product)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (p *ProductService) GetProductByURL(url string) (*models.Product, error) {
-	product, err := p.repo.GetProductByURL(url)
-	if err != nil {
-		return nil, err
-	}
-	return product, nil
-}
-
-func (p *ProductService) CheckIfProductExists(url string) (bool, error) {
-	exists, err := p.repo.ProductExists(url)
-	if err != nil {
-		return false, err
-	}
-	return exists, nil
-}
-
-func (p *ProductService) AddProductToUser(user models.User, product models.Product) error {
-	err := p.repo.AddProductToUser(user, product)
 	if err != nil {
 		return err
 	}
@@ -138,7 +103,23 @@ func (p *ProductService) RemoveProductToUser(user models.User, product models.Pr
 	return nil
 }
 
-func ScrapProduct(URL string) (*apiModels.ScrapProductResponse, error) {
+func (p *ProductService) GetProductHistory(product *models.Product) ([]models.ProductHistory, error) {
+	history, err := p.repo.GetProductHistory(product)
+	if err != nil {
+		return nil, err
+	}
+	return history, nil
+}
+
+func (p *ProductService) DeleteProductHistory(product *models.Product) error {
+	err := p.repo.DeleteProductHistory(product)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func scrapProduct(URL string) (*apiModels.ScrapProductResponse, error) {
 	bodyRequest := &apiModels.ScrapingRequest{URL: URL}
 	jsonData, err := json.Marshal(bodyRequest)
 	if err != nil {
@@ -169,12 +150,4 @@ func ScrapProduct(URL string) (*apiModels.ScrapProductResponse, error) {
 		return nil, err
 	}
 	return product, nil
-}
-
-func (p *ProductService) GetProductHistory(product *models.Product) ([]models.ProductHistory, error) {
-	history, err := p.repo.GetProductHistory(product)
-	if err != nil {
-		return nil, err
-	}
-	return history, nil
 }

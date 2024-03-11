@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"log"
-	dbUtils "price-tracking-products/src/DB/utils"
 	"price-tracking-products/src/models"
+	dbUtils "price-tracking-products/src/models/utils"
 )
 
 type UserRepository interface {
@@ -18,7 +18,6 @@ type UserRepository interface {
 
 type UserRepo struct {
 	db *sql.DB
-	tx *sql.Tx
 }
 
 func NewUserRepo() (*UserRepo, error) {
@@ -26,62 +25,63 @@ func NewUserRepo() (*UserRepo, error) {
 	if err != nil {
 		return nil, err
 	}
-	tx, err := dbUtils.CreateTransaction(db)
-	if err != nil {
-		return nil, err
-	}
-	return &UserRepo{db: db, tx: tx}, nil
+	return &UserRepo{db: db}, nil
 }
 
-func (u *UserRepo) updateTransaction() error {
-	tx, err := dbUtils.CreateTransaction(u.db)
-	if err != nil {
-		return nil
-	}
-	u.tx = tx
-	return nil
-}
-
-func (u UserRepo) AddUser(user models.User) error {
-	// Update the transaction
-	err := u.updateTransaction()
+func (repo UserRepo) AddUser(user models.User) error {
+	tx, err := repo.db.Begin()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	statement := `insert into "users" ("id","email","user_name") values ($1, $2, $3)`
-	_, err = u.tx.Exec(statement, user.Id, user.Email, user.UserName)
+	_, err = tx.Exec(statement, user.Id, user.Email, user.UserName)
 	if err != nil {
 		log.Printf("Error adding %s user %s\n", user.UserName, err.Error())
 		return err
 	}
-	defer dbUtils.CloseTransaction(u.tx, err)
-	return nil
-}
 
-func (u UserRepo) DeleteUser(user models.User) error {
-	// Update the transaction
-	err := u.updateTransaction()
+	err = tx.Commit()
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (repo UserRepo) DeleteUser(user models.User) error {
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	statement := `DELETE FROM "users" WHERE id=$1`
-	_, err = u.tx.Exec(statement, user.Id)
+	_, err = tx.Exec(statement, user.Id)
 	if err != nil {
 		log.Printf("Error deleting the user %s. %s \n", user.UserName, err)
 		return err
 	}
-	defer dbUtils.CloseTransaction(u.tx, err)
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (u UserRepo) ListUserProducts(user models.User) ([]models.Product, error) {
-	// Update the transaction
-	err := u.updateTransaction()
+func (repo UserRepo) ListUserProducts(user models.User) ([]models.Product, error) {
+	tx, err := repo.db.Begin()
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	if (user == models.User{}) {
 		log.Println("User empty, bad request")
@@ -91,7 +91,7 @@ func (u UserRepo) ListUserProducts(user models.User) ([]models.Product, error) {
 	statement := `SELECT id,name,brand,higher_price,lower_price,other_price,discount,image_url,product_url,store from "products" 
 	INNER JOIN "products_users" ON products_users.product_id = products.id 
 	WHERE products_users.user_id = $1`
-	rows, err := u.tx.Query(statement, user.Id)
+	rows, err := tx.Query(statement, user.Id)
 	if err != nil {
 		log.Printf("Error listing the products of the user %s user. %s \n", user.UserName, err.Error())
 		return nil, err
@@ -114,21 +114,27 @@ func (u UserRepo) ListUserProducts(user models.User) ([]models.Product, error) {
 		log.Println("Error during the  iteration", err)
 		return nil, err
 	}
-	defer dbUtils.CloseTransaction(u.tx, err)
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
 	return products, nil
 }
 
-func (u UserRepo) HaveProduct(user models.User, url string) (bool, error) {
-	// Update the transaction
-	err := u.updateTransaction()
+func (repo UserRepo) HaveProduct(user models.User, url string) (bool, error) {
+	tx, err := repo.db.Begin()
 	if err != nil {
 		return false, err
 	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	statement := `SELECT count(user_id) FROM products_users 
 	INNER JOIN products ON products_users.product_id = products.id
 	WHERE user_id=$1 AND product_url=$2;`
-	rows, err := u.tx.Query(statement, user.Id, url)
+	rows, err := tx.Query(statement, user.Id, url)
 	if err != nil {
 		log.Printf("Error checking if user %s has the product. %s \n", user.UserName, err.Error())
 		return false, err
@@ -147,23 +153,33 @@ func (u UserRepo) HaveProduct(user models.User, url string) (bool, error) {
 	if amount != 0 {
 		return true, nil
 	}
-	defer dbUtils.CloseTransaction(u.tx, err)
+
+	err = tx.Commit()
+	if err != nil {
+		return false, err
+	}
 	return false, nil
 }
 
-func (u UserRepo) DeleteAllUserProducts(user models.User) error {
-	// Update the transaction
-	err := u.updateTransaction()
+func (repo UserRepo) DeleteAllUserProducts(user models.User) error {
+	tx, err := repo.db.Begin()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	statement := `DELETE FROM "products_users" WHERE user_id=$1`
-	_, err = u.tx.Exec(statement, user.Id)
+	_, err = tx.Exec(statement, user.Id)
 	if err != nil {
 		log.Printf("Error deleting the user's products. %s \n", err)
 		return err
 	}
-	defer dbUtils.CloseTransaction(u.tx, err)
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 	return nil
 }
