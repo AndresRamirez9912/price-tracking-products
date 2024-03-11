@@ -1,20 +1,22 @@
 package services
 
 import (
-	"price-tracking-products/src/DB/repository"
 	"price-tracking-products/src/models"
+	"price-tracking-products/src/models/repository"
 )
+
+type UserServiceInterface interface {
+	AddUser(user models.User) error
+	DeleteUser(user models.User) error
+	ListUserProducts(user *models.User) ([]models.Product, error)
+}
 
 type UserService struct {
 	repo repository.UserRepository
 }
 
-func NewUserService() (*UserService, error) {
-	repo, err := repository.NewUserRepo()
-	if err != nil {
-		return nil, err
-	}
-	return &UserService{repo: repo}, nil
+func NewUserService(userRepo repository.UserRepository) *UserService {
+	return &UserService{repo: userRepo}
 }
 
 func (u UserService) AddUser(user models.User) error {

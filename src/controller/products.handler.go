@@ -1,23 +1,33 @@
-package handlers
+package controller
 
 import (
 	"encoding/json"
 	"net/http"
-	apiModels "price-tracking-products/src/API/models"
-	apiUtils "price-tracking-products/src/API/utils"
+
 	"price-tracking-products/src/constants"
+	apiModels "price-tracking-products/src/controller/models"
+	apiUtils "price-tracking-products/src/controller/utils"
 	"price-tracking-products/src/services"
 )
 
-func AddProductHandler(w http.ResponseWriter, r *http.Request) {
-	productService := services.NewProductService()
+type ProductsController struct {
+	productService services.ProductServiceInterface
+}
+
+func NewProductController(productService services.ProductServiceInterface) *ProductsController {
+	return &ProductsController{
+		productService: productService,
+	}
+}
+
+func (controller *ProductsController) AddProductHandler(w http.ResponseWriter, r *http.Request) {
 	body := &apiModels.AddProductRequest{}
 	err := apiUtils.GetBody(r.Body, body)
 	if err != nil {
 		return
 	}
 
-	err = productService.AddProduct(body.User, body.URL)
+	err = controller.productService.AddProduct(body.User, body.URL)
 	if err != nil {
 		return
 	}
@@ -26,8 +36,7 @@ func AddProductHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func RemoveProductHandler(w http.ResponseWriter, r *http.Request) {
-	productService := services.NewProductService()
+func (controller *ProductsController) RemoveProductHandler(w http.ResponseWriter, r *http.Request) {
 	body := &apiModels.RemoveProductRequest{}
 	err := apiUtils.GetBody(r.Body, body)
 	if err != nil {
@@ -35,7 +44,7 @@ func RemoveProductHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = productService.RemoveProductToUser(body.User, body.Product)
+	err = controller.productService.RemoveProductToUser(body.User, body.Product)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -45,9 +54,8 @@ func RemoveProductHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func GetProductHistory(w http.ResponseWriter, r *http.Request) {
+func (controller *ProductsController) GetProductHistory(w http.ResponseWriter, r *http.Request) {
 	response := &apiModels.ProductHistoryResponse{}
-	productService := services.NewProductService()
 	body := &apiModels.ProductHistoryRequest{}
 	err := apiUtils.GetBody(r.Body, body)
 	if err != nil {
@@ -55,7 +63,7 @@ func GetProductHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	history, err := productService.GetProductHistory(&body.Product)
+	history, err := controller.productService.GetProductHistory(&body.Product)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

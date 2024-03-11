@@ -1,27 +1,30 @@
-package handlers
+package controller
 
 import (
 	"encoding/json"
 	"net/http"
-	apiModels "price-tracking-products/src/API/models"
-	apiUtils "price-tracking-products/src/API/utils"
+
 	"price-tracking-products/src/constants"
+	apiModels "price-tracking-products/src/controller/models"
+	apiUtils "price-tracking-products/src/controller/utils"
 	"price-tracking-products/src/models"
 	"price-tracking-products/src/services"
 )
 
-func AddUserHandler(w http.ResponseWriter, r *http.Request) {
-	response := &apiModels.GenericResponse{}
-	userService, err := services.NewUserService()
-	if err != nil {
-		response.Success = false
-		response.ErrorMessage = err.Error()
-		apiUtils.CreateResponse(w, http.StatusInternalServerError, response)
-		return
-	}
+type UserController struct {
+	userService services.UserServiceInterface
+}
 
+func NewUserController(userService services.UserServiceInterface) *UserController {
+	return &UserController{
+		userService: userService,
+	}
+}
+
+func (controller *UserController) AddUserHandler(w http.ResponseWriter, r *http.Request) {
+	response := &apiModels.GenericResponse{}
 	user := &models.User{}
-	err = apiUtils.GetBody(r.Body, user)
+	err := apiUtils.GetBody(r.Body, user)
 	if err != nil {
 		response.Success = false
 		response.ErrorMessage = err.Error()
@@ -29,7 +32,7 @@ func AddUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = userService.AddUser(*user)
+	err = controller.userService.AddUser(*user)
 	if err != nil {
 		response.Success = false
 		response.ErrorMessage = err.Error()
@@ -42,19 +45,14 @@ func AddUserHandler(w http.ResponseWriter, r *http.Request) {
 	apiUtils.CreateResponse(w, http.StatusCreated, response)
 }
 
-func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
-	userService, err := services.NewUserService()
-	if err != nil {
-		return
-	}
-
+func (controller *UserController) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	user := &apiModels.DeleteUserRequest{}
-	err = apiUtils.GetBody(r.Body, user)
+	err := apiUtils.GetBody(r.Body, user)
 	if err != nil {
 		return
 	}
 
-	err = userService.DeleteUser(user.User)
+	err = controller.userService.DeleteUser(user.User)
 	if err != nil {
 		return
 	}
@@ -63,15 +61,10 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func ListUserProductsHandler(w http.ResponseWriter, r *http.Request) {
+func (controller *UserController) ListUserProductsHandler(w http.ResponseWriter, r *http.Request) {
 	response := &apiModels.ListUserProductsResponse{}
-	userService, err := services.NewUserService()
-	if err != nil {
-		return
-	}
-
 	user := &apiModels.ListProductsRequest{}
-	err = apiUtils.GetBody(r.Body, user)
+	err := apiUtils.GetBody(r.Body, user)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		response.Success = false
@@ -79,7 +72,7 @@ func ListUserProductsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	products, err := userService.ListUserProducts(&user.User)
+	products, err := controller.userService.ListUserProducts(&user.User)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response.Success = false

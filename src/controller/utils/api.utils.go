@@ -5,8 +5,9 @@ import (
 	"io"
 	"log"
 	"net/http"
-	apiModels "price-tracking-products/src/API/models"
+
 	"price-tracking-products/src/constants"
+	apiModels "price-tracking-products/src/controller/models"
 )
 
 func GetBody(body io.ReadCloser, receiver any) error {
