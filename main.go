@@ -6,6 +6,7 @@ import (
 	"os"
 	"price-tracking-products/src/constants"
 	"price-tracking-products/src/controller"
+	cronjob "price-tracking-products/src/controller/cron-job"
 	"price-tracking-products/src/models/repository"
 	"price-tracking-products/src/services"
 
@@ -34,6 +35,9 @@ func main() {
 	productService := services.NewProductService(productRepo, userRepo)
 	userController := controller.NewUserController(userService)
 	productController := controller.NewProductController(productService)
+
+	// Init Cron Job
+	go cronjob.InitCronJob(productService, 20) // 20 scraping at the same time
 
 	r := chi.NewRouter()
 	r.Post("/api/AddProduct", productController.AddProductHandler)

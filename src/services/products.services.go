@@ -18,10 +18,10 @@ import (
 type ProductServiceInterface interface {
 	AddProduct(user models.User, url string) error
 	RemoveProductToUser(user models.User, product models.Product) error
-	UpdateProductPrice(product models.Product) error
+	GetAllProducts() ([]models.Product, error)
+	UpdateStoredProduct(product models.Product, available chan bool)
 
 	GetProductHistory(product *models.Product) ([]models.ProductHistory, error)
-	DeleteProductHistory(product *models.Product) error
 }
 
 type ProductService struct {
@@ -111,12 +111,48 @@ func (p *ProductService) GetProductHistory(product *models.Product) ([]models.Pr
 	return history, nil
 }
 
-func (p *ProductService) DeleteProductHistory(product *models.Product) error {
-	err := p.repo.DeleteProductHistory(product)
+func (p *ProductService) GetAllProducts() ([]models.Product, error) {
+	products, err := p.repo.GetAllProducts()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return products, nil
+}
+
+func (p *ProductService) UpdateStoredProduct(product models.Product, available chan bool) {
+	// Free an espace in the available cha (semaphore pattern)
+	defer func() {
+		<-available
+	}()
+
+	// Scrap the product
+	newProduct, err := scrapProduct(product.ProductURL)
+	if err != nil {
+		log.Println("Error scrapping the product for price updating", err)
+		return
+	}
+
+	// Compare if there is any change
+	if !(newProduct.Product.Discount != product.Discount) {
+		log.Println("Price equals")
+		return
+	}
+
+	// Update the price
+	err = p.repo.UpdateProductPrice(newProduct.Product)
+	if err != nil {
+		log.Println("Error updating the product price", err)
+		return
+	}
+
+	// Add the price history
+	err = p.repo.AddProductHistory(&newProduct.Product)
+	if err != nil {
+		log.Println("Error creating the item in the price history", err)
+		return
+	}
+
+	// Notify
 }
 
 func scrapProduct(URL string) (*apiModels.ScrapProductResponse, error) {

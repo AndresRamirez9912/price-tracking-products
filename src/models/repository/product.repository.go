@@ -9,12 +9,12 @@ import (
 
 type ProductsRepository interface {
 	AddProduct(models.Product) error
-	DeleteProduct(models.Product) error
 	AddProductToUser(models.User, models.Product) error
 	RemoveProductToUser(models.User, models.Product) error
 	UpdateProductPrice(models.Product) error
 	ProductExists(string) (bool, error)
 	GetProductByURL(string) (*models.Product, error)
+	GetAllProducts() ([]models.Product, error)
 
 	AddProductHistory(*models.Product) error
 	DeleteProductHistory(*models.Product) error
@@ -48,29 +48,6 @@ func (repo ProductRepo) AddProduct(product models.Product) error {
 	_, err = tx.Exec(statement, product.Id, product.Name, product.Brand, product.HigherPrice, product.LowePrice, product.OtherPaymentLowerPrice, product.Discount, product.ImageURL, product.Store, product.ProductURL)
 	if err != nil {
 		log.Printf("Error adding %s product %s \n", product.Name, err.Error())
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (repo ProductRepo) DeleteProduct(product models.Product) error {
-	tx, err := repo.db.Begin()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
-
-	statement := `DELETE * FROM products WHERE products.id=$1`
-	_, err = tx.Exec(statement, product.Id)
-	if err != nil {
-		log.Printf("Error deleting the product product %s. %s\n", product.Name, err.Error())
 		return err
 	}
 
@@ -137,7 +114,7 @@ func (repo ProductRepo) UpdateProductPrice(newProduct models.Product) error {
 	}()
 
 	statement := `UPDATE "products" 
-	SET "higher_price"=$1,"lower_price"=$2,"other_price"=$3,"discount"=$4 WHERE products.id = $5;`
+	SET "higher_price"=$1,"lower_price"=$2,"other_price"=$3,"discount"=$4 WHERE products.id = $5`
 	_, err = tx.Exec(statement, newProduct.HigherPrice, newProduct.LowePrice, newProduct.OtherPaymentLowerPrice, newProduct.Discount, newProduct.Id)
 	if err != nil {
 		log.Printf("Error updating the product %s %s  \n", newProduct.Name, err.Error())
@@ -224,6 +201,43 @@ func (repo ProductRepo) GetProductByURL(url string) (*models.Product, error) {
 	return product, nil
 }
 
+func (repo ProductRepo) GetAllProducts() ([]models.Product, error) {
+	tx, err := repo.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	statement := `SELECT id,name,higher_price,lower_price,other_price,discount,product_url 
+	FROM products`
+	rows, err := tx.Query(statement)
+	if err != nil {
+		log.Printf("Error getting the hole products: %s\n", err.Error())
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []models.Product
+	for rows.Next() {
+		product := &models.Product{}
+		err = rows.Scan(&product.Id, &product.Name, &product.HigherPrice, &product.LowePrice, &product.OtherPaymentLowerPrice, &product.Discount, &product.ProductURL)
+		if err != nil {
+			log.Println("Error scanning the query result, getting the complete products", err)
+			return nil, err
+		}
+		products = append(products, *product)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+	return products, nil
+
+}
+
 func (repo ProductRepo) AddProductHistory(product *models.Product) error {
 	tx, err := repo.db.Begin()
 	if err != nil {
@@ -233,9 +247,9 @@ func (repo ProductRepo) AddProductHistory(product *models.Product) error {
 		_ = tx.Rollback()
 	}()
 
-	statement := `insert into "product_history" 
+	statement := `INSERT INTO "product_history" 
 	("product_id","product_name","higher_price","lower_price","other_price") 
-	values ($1, $2, $3, $4, $5)`
+	VALUES ($1, $2, $3, $4, $5)`
 	_, err = tx.Exec(statement, product.Id, product.Name, product.HigherPrice, product.LowePrice, product.OtherPaymentLowerPrice)
 	if err != nil {
 		log.Printf("Error adding the product %s to the history table %s\n", product.Name, err.Error())
@@ -259,7 +273,7 @@ func (repo ProductRepo) DeleteProductHistory(product *models.Product) error {
 		_ = tx.Rollback()
 	}()
 
-	statement := `DELETE * FROM product_history WHERE product_history.id=$1`
+	statement := `DELETE * FROM product_history WHERE id=$1`
 	_, err = tx.Exec(statement, product.Id)
 	if err != nil {
 		log.Printf("Error deleting the product %s to the history table %s\n", product.Name, err.Error())
@@ -293,7 +307,7 @@ func (repo ProductRepo) GetProductHistory(product *models.Product) ([]models.Pro
 	var productHistory []models.ProductHistory
 	for rows.Next() {
 		product := &models.ProductHistory{}
-		err = rows.Scan(&product.Id, &product.ProductId, &product.ProductName, &product.HigherPrice, &product.LowePrice, &product.OtherPaymentLowerPrice, &product.CreatedAt)
+		err = rows.Scan(&product.ProductId, &product.ProductName, &product.HigherPrice, &product.LowePrice, &product.OtherPaymentLowerPrice, &product.CreatedAt)
 		if err != nil {
 			log.Println("Error scanning the query result, getting the product history", err)
 			return nil, err

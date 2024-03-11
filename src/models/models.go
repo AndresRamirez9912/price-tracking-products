@@ -20,7 +20,6 @@ type User struct {
 }
 
 type ProductHistory struct {
-	Id                     string `json:"id"`
 	ProductId              string `json:"productId"`
 	ProductName            string `json:"productName"`
 	HigherPrice            string `json:"higherPrice"`
