@@ -13,3 +13,6 @@ openLocalPostgres:
 
 openDockerPostgres:
 	docker exec -it postgres-products psql -U db -d Price-Tracker
+
+runLocal:
+	./init.bash

@@ -11,17 +11,9 @@ import (
 	"price-tracking-products/src/services"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Read the .env variables
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Println("Error loading the .env variables", err)
-		return
-	}
-
 	// Initialize the application
 	userRepo, err := repository.NewUserRepo()
 	if err != nil {
