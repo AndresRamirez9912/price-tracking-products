@@ -17,6 +17,7 @@ type User struct {
 	Id       string `json:"id"`
 	Email    string `json:"email"`
 	UserName string `json:"userName"`
+	Password string `json:"password"`
 }
 
 type ProductHistory struct {
@@ -26,4 +27,20 @@ type ProductHistory struct {
 	LowePrice              string `json:"lowePrice"`
 	OtherPaymentLowerPrice string `json:"otherPaymentLowerPrice"`
 	CreatedAt              string `json:"createdAt"`
+}
+
+type CreateUserRequest struct {
+	Name     string `json:"name"`
+	UserName string `json:"userName"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type CreateUserResponse struct {
+	Success  bool `json:"success"`
+	Response struct {
+		UserSub string `json:"UserSub"`
+	} `json:"response"`
+	ErrorCode    int    `json:"errorCode"`
+	ErrorMessage string `json:"errorMessage"`
 }

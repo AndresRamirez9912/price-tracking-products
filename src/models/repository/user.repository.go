@@ -1,9 +1,16 @@
 package repository
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
+	"net/http"
+	"os"
+	"price-tracking-products/src/constants"
+	apiUtils "price-tracking-products/src/controller/utils"
 	"price-tracking-products/src/models"
 	dbUtils "price-tracking-products/src/models/utils"
 )
@@ -14,6 +21,7 @@ type UserRepository interface {
 	ListUserProducts(models.User) ([]models.Product, error)
 	HaveProduct(models.User, string) (bool, error)
 	DeleteAllUserProducts(models.User) error
+	CreateUser(user models.User) (*models.CreateUserResponse, error)
 }
 
 type UserRepo struct {
@@ -182,4 +190,42 @@ func (repo UserRepo) DeleteAllUserProducts(user models.User) error {
 		return err
 	}
 	return nil
+}
+
+func (repo UserRepo) CreateUser(user models.User) (*models.CreateUserResponse, error) {
+	bodyRequest := &models.CreateUserRequest{
+		Name:     user.UserName,
+		Email:    user.Email,
+		UserName: user.UserName,
+		Password: user.Password,
+	}
+	jsonData, err := json.Marshal(bodyRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	// URL = "http://price-tracking-auth:3001/signUp"
+	scrapingURL := fmt.Sprintf("%s://%s/api/signUp", os.Getenv(constants.SCHEME), os.Getenv(constants.AUTH_HOST))
+	req, err := http.NewRequest(http.MethodPost, scrapingURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Println("Error creating the HTTP request to the Auth service", err)
+		return nil, err
+	}
+	req.Header.Add(constants.CONTENT_TYPE, constants.APPLICATION_JSON)
+
+	client := &http.Client{}
+	response, err := client.Do(req)
+	if err != nil {
+		log.Println("Error sending the http request to the Auth micro service", err)
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	// Get the information
+	product := &models.CreateUserResponse{}
+	err = apiUtils.GetBody(response.Body, product)
+	if err != nil {
+		return nil, err
+	}
+	return product, nil
 }

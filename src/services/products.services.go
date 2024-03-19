@@ -163,7 +163,7 @@ func scrapProduct(URL string) (*apiModels.ScrapProductResponse, error) {
 	}
 
 	// URL = "http://price-tracking-scrapping:3002/scraping"
-	scrapingURL := fmt.Sprintf("%s://%s/api/scraping", os.Getenv(constants.SCRAPING_SCHEME), os.Getenv(constants.SCRAPING_HOST))
+	scrapingURL := fmt.Sprintf("%s://%s/api/scraping", os.Getenv(constants.SCHEME), os.Getenv(constants.SCRAPING_HOST))
 	req, err := http.NewRequest(http.MethodPost, scrapingURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Println("Error creating the HTTP request to the Scraping service", err)

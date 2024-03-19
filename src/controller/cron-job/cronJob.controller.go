@@ -9,7 +9,7 @@ func InitCronJob(productService services.ProductServiceInterface, workers int) {
 	available := make(chan bool, workers)
 	for {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-time.After(1 * time.Hour):
 			processProducts(productService, available)
 		}
 	}

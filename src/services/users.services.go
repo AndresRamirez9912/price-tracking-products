@@ -20,7 +20,13 @@ func NewUserService(userRepo repository.UserRepository) *UserService {
 }
 
 func (u UserService) AddUser(user models.User) error {
-	err := u.repo.AddUser(user)
+	authResponse, err := u.repo.CreateUser(user)
+	if err != nil {
+		return err
+	}
+
+	user.Id = authResponse.Response.UserSub
+	err = u.repo.AddUser(user)
 	if err != nil {
 		return err
 	}
